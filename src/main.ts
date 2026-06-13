@@ -37,6 +37,7 @@ import type { ManualCommandControls } from "./components/manual-command-controls
 type MujocoModule = any;
 type MujocoModel = any;
 type MujocoData = any;
+type GaussianSupportFillMode = NonNullable<GaussianSplatHeightfieldConfig["supportFillMode"]>;
 
 interface RuntimeState {
   env: EnvDefinition | null;
@@ -73,6 +74,14 @@ type RoutePlannerStatusKind = "idle" | "busy" | "success" | "error";
 
 const DEFAULT_ROUTE_MAX_SLOPE = 0.55;
 const DEFAULT_ROUTE_MAX_STEP_HEIGHT = 0.22;
+const GAUSSIAN_SUPPORT_FILL_MODES: ReadonlyArray<{
+  value: GaussianSupportFillMode;
+  label: string;
+}> = [
+  { value: "fallback", label: "Fallback" },
+  { value: "nearby", label: "Nearby" },
+  { value: "min", label: "Min" },
+];
 
 interface DynamicGaussianTerrainState {
   runtime: DynamicGaussianHeightfield;
@@ -118,6 +127,7 @@ class WebPlayApp {
   private readonly activeGaussianSourceLabels = new Map<string, string>();
   private readonly gaussianScaleMultipliers = new Map<string, number>();
   private readonly gaussianPresetIds = new Map<string, string>();
+  private readonly gaussianSupportFillModes = new Map<string, GaussianSupportFillMode>();
   private readonly spawnOverrides = new Map<string, SpawnOverride>();
   private readonly pressedKeys = new Set<string>();
   private spawnPickerActive = false;
@@ -1322,6 +1332,16 @@ class WebPlayApp {
             </div>
             <label id="gaussian-preset-label" class="field-label" for="gaussian-preset-select">Terrain Preset</label>
             <select id="gaussian-preset-select" class="select-input"></select>
+            <label class="field-label" for="gaussian-fill-mode-select">Support Fill Mode</label>
+            <select
+              id="gaussian-fill-mode-select"
+              class="select-input"
+              title="How unresolved support-height holes are resolved while sampling the height field"
+            >
+              ${GAUSSIAN_SUPPORT_FILL_MODES.map(
+                (mode) => `<option value="${mode.value}">${mode.label}</option>`,
+              ).join("")}
+            </select>
             <label
               class="file-picker"
               for="gaussian-file-input"
@@ -1616,6 +1636,9 @@ class WebPlayApp {
     this.requiredElement<HTMLSelectElement>("#gaussian-preset-select").addEventListener("change", (event) => {
       void this.applyGaussianPresetFromInput(event.currentTarget as HTMLSelectElement);
     });
+    this.requiredElement<HTMLSelectElement>("#gaussian-fill-mode-select").addEventListener("change", (event) => {
+      void this.applyGaussianSupportFillModeFromInput(event.currentTarget as HTMLSelectElement);
+    });
     this.requiredElement<HTMLInputElement>("#gaussian-file-input").addEventListener("change", (event) => {
       void this.loadGaussianSourceFromInput(event.currentTarget as HTMLInputElement);
     });
@@ -1715,6 +1738,7 @@ class WebPlayApp {
     const gaussianHeightfield = this.gaussianHeightfieldForEnv(env);
     section.hidden = !gaussianHeightfield;
     this.syncGaussianPresetControl(env);
+    this.syncGaussianSupportFillModeControl(env);
     this.syncGaussianScaleControl(env);
     if (!gaussianHeightfield || !env) {
       this.setGaussianSourceStatus("");
@@ -1766,6 +1790,8 @@ class WebPlayApp {
     const presets = this.gaussianPresetsForEnv(env);
     this.requiredElement<HTMLSelectElement>("#gaussian-preset-select").disabled =
       disabled || presets.length < 2;
+    this.requiredElement<HTMLSelectElement>("#gaussian-fill-mode-select").disabled =
+      disabled || !gaussianHeightfield;
     this.requiredElement<HTMLInputElement>("#gaussian-file-input").disabled = disabled;
     this.requiredElement<HTMLButtonElement>("#gaussian-clear-button").disabled =
       disabled || !hasSource;
@@ -1803,6 +1829,27 @@ class WebPlayApp {
     await this.loadEnvironment(env.id);
   }
 
+  private syncGaussianSupportFillModeControl(env: EnvDefinition | null): void {
+    const input = this.requiredElement<HTMLSelectElement>("#gaussian-fill-mode-select");
+    input.value = env && this.gaussianHeightfieldForEnv(env)
+      ? this.gaussianSupportFillModeForEnv(env)
+      : "fallback";
+  }
+
+  private async applyGaussianSupportFillModeFromInput(input: HTMLSelectElement): Promise<void> {
+    const env = this.state.env;
+    if (!env || !this.gaussianHeightfieldForEnv(env) || this.state.loading) {
+      return;
+    }
+    const mode = parseGaussianSupportFillMode(input.value);
+    if (!mode) {
+      this.syncGaussianSupportFillModeControl(env);
+      return;
+    }
+    this.gaussianSupportFillModes.set(this.gaussianStateKey(env), mode);
+    await this.loadEnvironment(env.id);
+  }
+
   private updateGaussianScaleOutput(scale: number): void {
     this.requiredElement<HTMLOutputElement>("#gaussian-scale-output").value =
       `${scale.toFixed(2)}x`;
@@ -1818,6 +1865,12 @@ class WebPlayApp {
       1;
   }
 
+  private gaussianSupportFillModeForEnv(env: EnvDefinition): GaussianSupportFillMode {
+    return this.gaussianSupportFillModes.get(this.gaussianStateKey(env)) ??
+      this.gaussianHeightfieldForEnv(env)?.supportFillMode ??
+      "fallback";
+  }
+
   private envWithGaussianOverrides(env: EnvDefinition): EnvDefinition {
     const preset = this.gaussianPresetForEnv(env);
     const heightfield = this.gaussianHeightfieldForEnv(env);
@@ -1830,6 +1883,7 @@ class WebPlayApp {
       heightfield: {
         ...heightfield,
         sourceScaleMultiplier: this.gaussianScaleForEnv(env),
+        supportFillMode: this.gaussianSupportFillModeForEnv(env),
       },
       viewer: preset?.viewer ?? env.viewer,
     };
@@ -2322,6 +2376,12 @@ function isAbortError(error: unknown): boolean {
 
 function isSupportedGaussianSourceName(fileName: string): boolean {
   return /\.(splat|ply|spz|sog)$/i.test(fileName);
+}
+
+function parseGaussianSupportFillMode(value: string): GaussianSupportFillMode | null {
+  return GAUSSIAN_SUPPORT_FILL_MODES.some((mode) => mode.value === value)
+    ? value as GaussianSupportFillMode
+    : null;
 }
 
 function clampNumber(value: number, min: number, max: number): number {
