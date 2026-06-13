@@ -166,7 +166,10 @@ class WebPlayApp {
     this.stopSpawnPicker(false);
     this.stopGoalPicker(false);
     this.clearRoutePlan(false);
-    this.activeMode = "control";
+    const isSameEnv = this.state.env?.id === envId;
+    if (!isSameEnv) {
+      this.activeMode = "control";
+    }
     const loadToken = ++this.loadToken;
     this.heightfieldAbortController?.abort();
     const heightfieldAbortController = new AbortController();
