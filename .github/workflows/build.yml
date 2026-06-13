@@ -1,0 +1,72 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      include_garden:
+        description: "Include the optional Garden Gaussian demo in the build artifact"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build static app
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      INCLUDE_GARDEN: ${{ github.event_name == 'workflow_dispatch' && inputs.include_garden }}
+      MJWEB_PREPARE_MJLAB_REF: a0ba05890a2ea4111b33c9cbb85f690bf19ca434
+      MJWEB_PREPARE_MJLAB_TOKEN: ${{ secrets.MJLAB_REPO_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare generated assets
+        run: npm run prepare:assets:ci
+
+      - name: Restore Garden cache
+        if: ${{ env.INCLUDE_GARDEN == 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: public/envs/go1_gaussian/splats/garden/garden.splat
+          key: garden-splat-v1
+
+      - name: Download Garden demo
+        if: ${{ env.INCLUDE_GARDEN == 'true' }}
+        run: npm run setup:garden
+
+      - name: Build
+        run: |
+          if [ "${INCLUDE_GARDEN}" = "true" ]; then
+            npm run build:local-gaussian
+          else
+            npm run build
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mjweb-dist${{ env.INCLUDE_GARDEN == 'true' && '-garden' || '' }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14

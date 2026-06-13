@@ -1,0 +1,40 @@
+{
+  "name": "mjlab-web-play",
+  "version": "0.1.0",
+  "description": "Browser-based MuJoCo and ONNX locomotion playground with Gaussian-splat terrain navigation.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:assets": "bash scripts/prepare-assets.sh",
+    "prepare:assets:ci": "MJWEB_PREPARE_EXPORT_SCENES=assets MJWEB_PREPARE_PRUNE_STL=1 bash scripts/prepare-assets.sh",
+    "setup:garden": "bash scripts/setup_demo_scene.sh",
+    "generate:gaussian-sources": "node scripts/generate-gaussian-source-manifest.mjs",
+    "predev": "npm run generate:gaussian-sources",
+    "prebuild": "npm run generate:gaussian-sources",
+    "dev": "vite --host 0.0.0.0",
+    "dev:local-gaussian": "MJWEB_INCLUDE_LOCAL_GAUSSIAN=1 npm run dev",
+    "build": "tsc && vite build",
+    "build:local-gaussian": "MJWEB_INCLUDE_LOCAL_GAUSSIAN=1 npm run build",
+    "preview": "vite preview --host 0.0.0.0",
+    "security:audit": "npm audit --audit-level=moderate",
+    "optimize:render-assets": "node scripts/optimize-render-assets.mjs",
+    "optimize:g1-render-assets": "npm run optimize:render-assets",
+    "verify:render": "node scripts/verify-render-mapping.mjs",
+    "analyze:cardinal-heightfield": "node scripts/analyze_cardinal_heightfield.mjs"
+  },
+  "dependencies": {
+    "@mujoco/mujoco": "^3.8.1",
+    "@sparkjsdev/spark": "^2.1.0",
+    "lucide": "^1.16.0",
+    "lit": "^3.1.2",
+    "onnxruntime-web": "^1.26.0",
+    "three": "^0.184.0",
+    "web-3dgs-to-pc": "git+https://github.com/tatsuya-ogawa/Web-3DGS-to-PC.git#4877a67bf68a30b0167beddc36c30813997bed76"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/three": "^0.184.1",
+    "typescript": "^6.0.3",
+    "vite": "^6.4.2"
+  }
+}
