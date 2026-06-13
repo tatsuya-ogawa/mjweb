@@ -3,6 +3,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { EnvDefinition } from "../envs/types";
 import type { GaussianSplatVisualSource } from "./gaussianHeightfield";
+import { publicUrl } from "../publicUrl";
 
 type MujocoModule = any;
 type MujocoModel = any;
@@ -680,7 +681,7 @@ export class MujocoRenderer {
     }
 
     const loader = new GLTFLoader();
-    const uniqueUrls = [...new Set(manifest.parts.map((part) => part.url))];
+    const uniqueUrls = [...new Set(manifest.parts.map((part) => publicUrl(part.url)))];
     await Promise.all(
       uniqueUrls.map(async (url) => {
         const gltf = await loader.loadAsync(url);
@@ -691,7 +692,8 @@ export class MujocoRenderer {
     );
 
     for (const part of manifest.parts) {
-      const geometry = this.visualGeometryCache.get(part.url);
+      const partUrl = publicUrl(part.url);
+      const geometry = this.visualGeometryCache.get(partUrl);
       if (!geometry) {
         continue;
       }

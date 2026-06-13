@@ -1,4 +1,5 @@
 import type { EnvDefinition } from "./types";
+import { publicUrl } from "../publicUrl";
 
 const GO1_JOINT_NAMES = [
   "robot/FR_hip_joint",
@@ -47,11 +48,11 @@ export const go1RoughEnv: EnvDefinition = {
   id: "go1_rough",
   label: "Unitree Go1 Rough",
   taskId: "Mjlab-Velocity-Rough-Unitree-Go1",
-  sceneXmlUrl: "/envs/go1_rough/scene_optimized.xml",
+  sceneXmlUrl: publicUrl("envs/go1_rough/scene_optimized.xml"),
   assets: [],
   observationKind: "velocity-rough-v1",
   policy: {
-    onnxUrl: "/models/go1_velocity_rough_latest.onnx",
+    onnxUrl: publicUrl("models/go1_velocity_rough_latest.onnx"),
     inputSize: GO1_ROUGH_INPUT_SIZE,
     outputSize: 12,
     defaultJointPos: GO1_DEFAULT_JOINT_POS,
@@ -101,7 +102,7 @@ export const go1RoughEnv: EnvDefinition = {
     timestep: 0.005,
   },
   render: {
-    visualMeshManifestUrl: "/envs/go1_rough/render-manifest.json",
+    visualMeshManifestUrl: publicUrl("envs/go1_rough/render-manifest.json"),
   },
   viewer: {
     followBody: "robot/trunk",

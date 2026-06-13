@@ -1,4 +1,5 @@
 import type { EnvDefinition } from "./types";
+import { publicUrl } from "../publicUrl";
 
 const withRobotPrefix = (names: string[]) => names.map((name) => `robot/${name}`);
 
@@ -60,11 +61,11 @@ export const g1RoughEnv: EnvDefinition = {
   id: "g1_rough",
   label: "Unitree G1 Rough",
   taskId: "Mjlab-Velocity-Rough-Unitree-G1",
-  sceneXmlUrl: "/envs/g1_rough/scene_optimized.xml",
+  sceneXmlUrl: publicUrl("envs/g1_rough/scene_optimized.xml"),
   assets: [],
   observationKind: "velocity-rough-v1",
   policy: {
-    onnxUrl: "/models/g1_velocity_rough_latest.onnx",
+    onnxUrl: publicUrl("models/g1_velocity_rough_latest.onnx"),
     inputSize: G1_ROUGH_INPUT_SIZE,
     outputSize: 29,
     defaultJointPos: G1_DEFAULT_JOINT_POS,
@@ -111,7 +112,7 @@ export const g1RoughEnv: EnvDefinition = {
     },
   },
   render: {
-    visualMeshManifestUrl: "/envs/g1_rough/render-manifest.json",
+    visualMeshManifestUrl: publicUrl("envs/g1_rough/render-manifest.json"),
   },
   viewer: {
     followBody: "robot/torso_link",

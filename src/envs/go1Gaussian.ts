@@ -1,5 +1,6 @@
 import { gaussianSourceBundlesForEnv } from "./gaussianSourceBundles";
 import { go1RoughEnv } from "./go1Rough";
+import { publicUrl } from "../publicUrl";
 import type {
   EnvDefinition,
   GaussianSplatHeightfieldConfig,
@@ -122,7 +123,7 @@ export const go1GaussianEnv: EnvDefinition = {
   id: GO1_GAUSSIAN_ENV_ID,
   label: "Unitree Go1 Gaussian Support",
   taskId: defaultGaussianPreset.taskId ?? "Mjweb-Gaussian-Support-Unitree-Go1",
-  sceneXmlUrl: "/envs/go1_flat/scene_optimized.xml",
+  sceneXmlUrl: publicUrl("envs/go1_flat/scene_optimized.xml"),
   observationKind: "velocity-rough-v1",
   policy: {
     ...roughPolicy,
@@ -139,7 +140,7 @@ export const go1GaussianEnv: EnvDefinition = {
       : undefined,
   },
   render: {
-    visualMeshManifestUrl: "/envs/go1_flat/render-manifest.json",
+    visualMeshManifestUrl: publicUrl("envs/go1_flat/render-manifest.json"),
   },
   heightfield: defaultGaussianPreset.heightfield,
   gaussianPresets,

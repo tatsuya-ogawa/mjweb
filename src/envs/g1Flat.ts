@@ -1,4 +1,5 @@
 import type { EnvDefinition } from "./types";
+import { publicUrl } from "../publicUrl";
 
 const withRobotPrefix = (names: string[]) => names.map((name) => `robot/${name}`);
 
@@ -102,11 +103,11 @@ export const g1FlatEnv: EnvDefinition = {
   id: "g1_flat",
   label: "Unitree G1 Flat",
   taskId: "Mjlab-Velocity-Flat-Unitree-G1",
-  sceneXmlUrl: "/envs/g1_flat/scene_optimized.xml",
+  sceneXmlUrl: publicUrl("envs/g1_flat/scene_optimized.xml"),
   assets: [],
   observationKind: "velocity-flat-v1",
   policy: {
-    onnxUrl: "/models/g1_velocity_flat_latest.onnx",
+    onnxUrl: publicUrl("models/g1_velocity_flat_latest.onnx"),
     inputSize: 99,
     outputSize: 29,
     defaultJointPos: G1_DEFAULT_JOINT_POS,
@@ -135,7 +136,7 @@ export const g1FlatEnv: EnvDefinition = {
     timestep: 0.005,
   },
   render: {
-    visualMeshManifestUrl: "/envs/g1_flat/render-manifest.json",
+    visualMeshManifestUrl: publicUrl("envs/g1_flat/render-manifest.json"),
   },
   viewer: {
     followBody: "robot/torso_link",

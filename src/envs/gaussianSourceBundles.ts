@@ -1,4 +1,5 @@
 import { bundledGaussianSourceUrls } from "../generated/gaussianSources";
+import { publicUrl } from "../publicUrl";
 
 interface BundledGaussianSource {
   envId: string;
@@ -26,7 +27,7 @@ const bundledGaussianSources = bundledGaussianSourceUrls.map(
     return {
       envId: parsed.envId,
       bundleId: parsed.bundleId,
-      url,
+      url: publicUrl(url),
       fileName: url.split("/").pop() ?? url,
     };
   },

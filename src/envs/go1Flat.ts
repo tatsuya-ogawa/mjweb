@@ -1,4 +1,5 @@
 import type { EnvDefinition } from "./types";
+import { publicUrl } from "../publicUrl";
 
 const GO1_JOINT_NAMES = [
   "robot/FR_hip_joint",
@@ -52,11 +53,11 @@ export const go1FlatEnv: EnvDefinition = {
   id: "go1_flat",
   label: "Unitree Go1 Flat",
   taskId: "Mjlab-Velocity-Flat-Unitree-Go1",
-  sceneXmlUrl: "/envs/go1_flat/scene_optimized.xml",
+  sceneXmlUrl: publicUrl("envs/go1_flat/scene_optimized.xml"),
   assets: [],
   observationKind: "velocity-flat-v1",
   policy: {
-    onnxUrl: "/models/go1_velocity_flat_latest.onnx",
+    onnxUrl: publicUrl("models/go1_velocity_flat_latest.onnx"),
     inputSize: 48,
     outputSize: 12,
     defaultJointPos: GO1_DEFAULT_JOINT_POS,
@@ -97,7 +98,7 @@ export const go1FlatEnv: EnvDefinition = {
     timestep: 0.005,
   },
   render: {
-    visualMeshManifestUrl: "/envs/go1_flat/render-manifest.json",
+    visualMeshManifestUrl: publicUrl("envs/go1_flat/render-manifest.json"),
   },
   viewer: {
     followBody: "robot/trunk",

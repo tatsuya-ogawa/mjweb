@@ -1,4 +1,5 @@
 import type { EnvDefinition } from "./types";
+import { publicUrl } from "../publicUrl";
 
 // Scaffolding only: the BeyondMimic-style tracking policy requires a motion
 // command (per-step motion target reference) that is not yet wired up on the
@@ -66,11 +67,11 @@ export const g1BackflipEnv: EnvDefinition = {
   id: "g1_backflip",
   label: "Unitree G1 Backflip (scaffold)",
   taskId: "Mjlab-Tracking-Flat-Unitree-G1",
-  sceneXmlUrl: "/envs/g1_backflip/scene_optimized.xml",
+  sceneXmlUrl: publicUrl("envs/g1_backflip/scene_optimized.xml"),
   assets: [],
   observationKind: "tracking-motion-v1",
   policy: {
-    onnxUrl: "/models/g1_backflip.onnx",
+    onnxUrl: publicUrl("models/g1_backflip.onnx"),
     inputSize: G1_BACKFLIP_INPUT_SIZE,
     outputSize: 29,
     defaultJointPos: G1_DEFAULT_JOINT_POS,
@@ -98,7 +99,7 @@ export const g1BackflipEnv: EnvDefinition = {
     timestep: 0.005,
   },
   render: {
-    visualMeshManifestUrl: "/envs/g1_backflip/render-manifest.json",
+    visualMeshManifestUrl: publicUrl("envs/g1_backflip/render-manifest.json"),
   },
   viewer: {
     followBody: "robot/torso_link",
