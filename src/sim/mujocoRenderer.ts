@@ -95,6 +95,7 @@ export class MujocoRenderer {
   private readonly renderParts = new Map<string, RenderPart>();
   private readonly partVisibility = new Map<string, boolean>();
   private meshesEnabled = true;
+  private heightfieldEnabled = true;
   private routeLine: THREE.Mesh | null = null;
   private sparkRenderer: any | null = null;
   private gaussianSplatMesh: any | null = null;
@@ -220,6 +221,13 @@ export class MujocoRenderer {
     this.gaussianSplatGroup.visible = enabled;
     if (this.gaussianSplatMesh) {
       this.gaussianSplatMesh.visible = enabled;
+    }
+  }
+
+  setHeightfieldVisualization(enabled: boolean): void {
+    this.heightfieldEnabled = enabled;
+    for (const [meshKey, mesh] of this.meshes) {
+      mesh.visible = this.visibleForMeshKey(meshKey);
     }
   }
 
@@ -413,7 +421,7 @@ export class MujocoRenderer {
       const meshKey = this.meshKeyForGeom(i, mjvGeom);
       activeMeshKeys.add(meshKey);
       const mesh = this.meshForGeom(meshKey, mjvGeom);
-      mesh.visible = this.visibleForMeshKey(meshKey);
+      mesh.visible = this.visibleForMeshKey(meshKey, mjvGeom.type);
       mesh.matrixAutoUpdate = false;
       mesh.matrix.set(
         mjvGeom.mat[0],
@@ -902,9 +910,13 @@ export class MujocoRenderer {
     return mjvGeom.dataid;
   }
 
-  private visibleForMeshKey(meshKey: string): boolean {
+  private visibleForMeshKey(meshKey: string, geomType?: number): boolean {
     if (!this.meshesEnabled || !(this.partVisibility.get(meshKey) ?? true)) {
       return false;
+    }
+    const type = geomType ?? this.meshes.get(meshKey)?.userData?.geomType;
+    if (type === enumValue(this.mujoco.mjtGeom.mjGEOM_HFIELD)) {
+      return this.heightfieldEnabled;
     }
     return true;
   }
@@ -947,10 +959,11 @@ export class MujocoRenderer {
       mesh = new THREE.Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      mesh.visible = this.meshesEnabled;
+      mesh.visible = this.visibleForMeshKey(meshKey, mjvGeom.type);
       mesh.userData = {
         objtype: mjvGeom.objtype,
         objid: mjvGeom.objid,
+        geomType: mjvGeom.type,
       };
       this.meshes.set(meshKey, mesh);
       this.dynamicGroup.add(mesh);
@@ -967,6 +980,7 @@ export class MujocoRenderer {
     }
     mesh.userData.objtype = mjvGeom.objtype;
     mesh.userData.objid = mjvGeom.objid;
+    mesh.userData.geomType = mjvGeom.type;
     return mesh;
   }
 

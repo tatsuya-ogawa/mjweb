@@ -7,11 +7,11 @@ import { go1RoughEnv } from "./go1Rough";
 import type { EnvDefinition } from "./types";
 
 export const envRegistry: EnvDefinition[] = [
+  go1GaussianEnv,
   g1FlatEnv,
   g1RoughEnv,
   go1FlatEnv,
   go1RoughEnv,
-  go1GaussianEnv,
 ];
 
 // Envs awaiting full implementation (e.g. ONNX or pipeline still pending).

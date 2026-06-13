@@ -50,6 +50,7 @@ interface RuntimeState {
   contacts: boolean;
   meshes: boolean;
   skeleton: boolean;
+  heightfield: boolean;
   speed: number;
   accumulator: number;
   frameCount: number;
@@ -98,6 +99,7 @@ class WebPlayApp {
     contacts: false,
     meshes: true,
     skeleton: true,
+    heightfield: true,
     speed: 1,
     accumulator: 0,
     frameCount: 0,
@@ -154,6 +156,7 @@ class WebPlayApp {
     this.stopSpawnPicker(false);
     this.stopGoalPicker(false);
     this.clearRoutePlan(false);
+    this.activeMode = "control";
     const loadToken = ++this.loadToken;
     this.heightfieldAbortController?.abort();
     const heightfieldAbortController = new AbortController();
@@ -295,6 +298,7 @@ class WebPlayApp {
         return;
       }
       renderer.setMeshVisualization(this.state.meshes);
+      renderer.setHeightfieldVisualization(this.state.heightfield);
       renderer.setSkeletonVisualization(this.state.skeleton);
 
       this.state.env = env;
@@ -1299,7 +1303,7 @@ class WebPlayApp {
             </select>
           </section>
 
-          <section class="control-section">
+          <section id="mode-selector-section" class="control-section">
             <div class="mode-selector">
               <button id="mode-control-button" class="mode-btn is-active" type="button">
                 <i data-lucide="sliders"></i><span>Control</span>
@@ -1468,6 +1472,16 @@ class WebPlayApp {
               <i data-lucide="box"></i>
             </button>
             <button
+              id="heightfield-button"
+              class="icon-button is-active"
+              type="button"
+              title="Hide heightfield mesh"
+              aria-label="Hide heightfield mesh"
+              hidden
+            >
+              <i data-lucide="mountain"></i>
+            </button>
+            <button
               id="skeleton-button"
               class="icon-button is-active"
               type="button"
@@ -1548,6 +1562,11 @@ class WebPlayApp {
     this.requiredElement<HTMLButtonElement>("#mesh-button").addEventListener("click", () => {
       this.state.meshes = !this.state.meshes;
       this.state.renderer?.setMeshVisualization(this.state.meshes);
+      this.syncVisualizationButtons();
+    });
+    this.requiredElement<HTMLButtonElement>("#heightfield-button").addEventListener("click", () => {
+      this.state.heightfield = !this.state.heightfield;
+      this.state.renderer?.setHeightfieldVisualization(this.state.heightfield);
       this.syncVisualizationButtons();
     });
     this.requiredElement<HTMLButtonElement>("#skeleton-button").addEventListener("click", () => {
@@ -1944,8 +1963,9 @@ class WebPlayApp {
   }
 
   private syncAllControls(env: EnvDefinition | null): void {
-    const modeSelector = this.requiredElement<HTMLElement>(".mode-selector");
-    modeSelector.hidden = false;
+    const canNav = this.canUseRoutePlanner(env);
+    const modeSelectorSection = this.requiredElement<HTMLElement>("#mode-selector-section");
+    modeSelectorSection.hidden = !canNav;
 
     this.syncGaussianSourceControls(env);
     this.syncSpawnPickerControls(env);
@@ -2088,6 +2108,16 @@ class WebPlayApp {
     const meshButton = this.requiredElement<HTMLButtonElement>("#mesh-button");
     meshButton.classList.toggle("is-active", this.state.meshes);
     this.setButtonTooltip(meshButton, this.state.meshes ? "Hide rendered meshes" : "Show rendered meshes");
+
+    const hasGaussian = Boolean(this.state.env?.heightfield);
+
+    const heightfieldButton = this.requiredElement<HTMLButtonElement>("#heightfield-button");
+    heightfieldButton.hidden = !hasGaussian;
+    heightfieldButton.classList.toggle("is-active", this.state.heightfield);
+    this.setButtonTooltip(
+      heightfieldButton,
+      this.state.heightfield ? "Hide heightfield mesh" : "Show heightfield mesh",
+    );
 
     const skeletonButton = this.requiredElement<HTMLButtonElement>("#skeleton-button");
     skeletonButton.classList.toggle("is-active", this.state.skeleton);
