@@ -106,6 +106,7 @@ const gaussianPresets: GaussianSplatPresetDefinition[] =
         ...baseHeightfield,
         ...override.heightfield,
         sourceBundleId: bundle.id,
+        sourceTransformConfig: bundle.sourceTransformConfig,
       },
       viewer: override.viewer ?? defaultViewer,
     };

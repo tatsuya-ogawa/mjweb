@@ -6,7 +6,7 @@ Browser-based MuJoCo locomotion playground for Unitree G1 and Go1 policies. The 
 
 - MuJoCo WASM simulation with ONNX policy inference in the browser
 - Unitree G1 and Go1 walk environments on flat and rough terrain
-- Go1 Gaussian support terrain generated from bundled or local Gaussian sources
+- Go1 Gaussian support terrain generated from bundled, remote, or local Gaussian sources
 - Navigation mode with goal picking, route preview, route following, and adjustable path-planning limits
 - Manual command controls for forward, lateral, and yaw velocity
 - Local-only custom Gaussian loading for `.sog`, `.spz`, `.splat`, and `.ply` files
@@ -48,33 +48,45 @@ npm run preview
 
 ## Gaussian Terrain
 
-The `Unitree Go1 Gaussian Support` environment can use bundled Gaussian sources or a local custom source.
+The `Unitree Go1 Gaussian Support` environment can use bundled Gaussian sources, remote preset sources, or a local custom source.
 
-- `Terrain Preset`: choose a bundled Gaussian preset.
+- `Terrain Preset`: choose a configured Gaussian preset.
 - `Load Custom Gaussian`: use a local `.sog`, `.spz`, `.splat`, or `.ply` source for the selected preset.
-- `Clear Custom Gaussian`: remove the loaded custom source and return to the bundled source.
+- `Clear Custom Gaussian`: remove the loaded custom source and return to the preset source.
 - `Source Scale`: adjust source-to-world scale before regenerating the height field.
 
 Custom Gaussian files are read by the browser from your local machine. The app does not upload them to a server.
 
-## Optional Garden Demo
+## Garden Demo
 
-The Garden demo source is large and intentionally ignored by Git. To download it locally:
+The Garden preset is large and is fetched directly by the browser from Hugging Face when selected. No local setup step is required:
 
 ```bash
-npm run setup:garden
-npm run dev:local-gaussian
+npm run dev
 ```
 
-The script places the source under `public/envs/go1_gaussian/splats/garden/` and writes the transform config needed by the app.
+Open the app, select `Unitree Go1 Gaussian Support`, then choose the `Garden` terrain preset. The source is approximately 178 MB, so first load depends on network speed and Hugging Face availability.
+
+Remote Gaussian presets are declared with a tracked `transform.json` under `public/envs/<env id>/splats/<preset id>/`. Add `sourceUrl` or `sourceUrls` to that file and the generated manifest will make the browser fetch the first reachable source directly:
+
+```json
+{
+  "sourceUrl": "https://huggingface.co/owner/repo/resolve/main/source.splat",
+  "matrix": {
+    "source.splat": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+  },
+  "scale": 1,
+  "spawn": [0, 0, 0]
+}
+```
 
 ## Project Scripts
 
 - `npm run prepare:assets`: clone or reuse `mjlab`, restore source mesh assets for tracked scenes, regenerate optimized render assets, and regenerate the Gaussian source manifest.
 - `npm run prepare:assets:ci`: run the same preparation for CI and prune source STL assets from `public/` before Vite copies files to `dist/`.
-- `npm run setup:garden`: download the optional Garden Gaussian demo source and write its transform config.
+- `npm run setup:garden`: download an optional local Garden Gaussian copy for debugging or fallback use; the default Garden preset fetches Hugging Face directly.
 - `npm run dev`: generate the Gaussian source manifest and start Vite.
-- `npm run dev:local-gaussian`: include ignored local Gaussian files, then start Vite.
+- `npm run dev:local-gaussian`: include ignored local Gaussian files, then start Vite. This is not required for the Garden preset.
 - `npm run build`: type-check and build the production bundle.
 - `npm run build:local-gaussian`: include ignored local Gaussian files, then build.
 - `npm run preview`: serve the production build locally.

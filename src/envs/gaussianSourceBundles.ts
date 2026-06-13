@@ -1,5 +1,9 @@
-import { bundledGaussianSourceUrls } from "../generated/gaussianSources";
+import {
+  bundledGaussianSourceUrls,
+  externalGaussianSourceConfigs,
+} from "../generated/gaussianSources";
 import { publicUrl } from "../publicUrl";
+import type { GaussianSourceTransformConfig } from "./types";
 
 interface BundledGaussianSource {
   envId: string;
@@ -12,6 +16,7 @@ export interface GaussianSourceBundleDefinition {
   id: string;
   label: string;
   sourceUrls: string[];
+  sourceTransformConfig?: GaussianSourceTransformConfig;
 }
 
 const SOURCE_EXTENSION_PRIORITY = new Map([
@@ -43,12 +48,32 @@ export function gaussianSourceBundlesForEnv(envId: string): GaussianSourceBundle
     sources.push(source);
     bundles.set(source.bundleId, sources);
   }
-  return [...bundles.entries()]
-    .map(([id, sources]) => ({
+
+  const definitions = new Map<string, GaussianSourceBundleDefinition>();
+  for (const config of externalGaussianSourceConfigs) {
+    if (config.envId !== envId) {
+      continue;
+    }
+    definitions.set(config.bundleId, {
+      id: config.bundleId,
+      label: formatBundleLabel(config.bundleId),
+      sourceUrls: [...config.sourceUrls],
+      sourceTransformConfig: config.transformConfig,
+    });
+  }
+
+  for (const [id, sources] of bundles.entries()) {
+    const bundledSourceUrls = sortBundledGaussianSources(sources).map((source) => source.url);
+    const existing = definitions.get(id);
+    definitions.set(id, {
       id,
       label: formatBundleLabel(id),
-      sourceUrls: sortBundledGaussianSources(sources).map((source) => source.url),
-    }))
+      sourceUrls: existing ? [...existing.sourceUrls, ...bundledSourceUrls] : bundledSourceUrls,
+      sourceTransformConfig: existing?.sourceTransformConfig,
+    });
+  }
+
+  return [...definitions.values()]
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
@@ -59,10 +84,7 @@ export function gaussianSourceUrlsForBundle(
   if (!envId || !bundleId) {
     return [];
   }
-  return bundledGaussianSources
-    .filter((source) => source.envId === envId && source.bundleId === bundleId)
-    .sort(compareBundledGaussianSources)
-    .map((source) => source.url);
+  return gaussianSourceBundlesForEnv(envId).find((bundle) => bundle.id === bundleId)?.sourceUrls ?? [];
 }
 
 function sortBundledGaussianSources(sources: BundledGaussianSource[]): BundledGaussianSource[] {

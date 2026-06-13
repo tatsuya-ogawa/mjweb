@@ -85,12 +85,30 @@ export interface ProceduralSlopeHeightfieldConfig extends BaseHeightfieldConfig 
   slopeHeight: number;
 }
 
+export interface GaussianSourceTransformConfig {
+  /** Remote source URL for this transform bundle. */
+  sourceUrl?: string;
+  /** Remote source URLs for this transform bundle, tried in order. */
+  sourceUrls?: readonly string[];
+  /** 4x4 row-major source transform, or per-file transforms keyed by basename. */
+  matrix?: readonly number[] | Record<string, readonly number[]>;
+  /** Source scale applied before projection. */
+  scale?: number;
+  /** Optional starting pose override after projection. */
+  spawn?:
+    | readonly [number, number]
+    | readonly [number, number, number]
+    | { x: number; y: number; yaw?: number };
+}
+
 export interface GaussianSplatHeightfieldConfig extends BaseHeightfieldConfig {
   kind: "gaussian-splat";
   /** Bundle name under public/envs/<env id>/splats. Supported Gaussian files become source candidates. */
   sourceBundleId?: string;
   /** Optional fallback/override source URLs. The first fetchable .sog/.spz/.splat/.ply source is projected. */
   sourceUrls?: string[];
+  /** Optional transform config for sources that do not ship a sibling transform.json. */
+  sourceTransformConfig?: GaussianSourceTransformConfig;
   /** Source X/Z center used for projection. Defaults to source bounds center. */
   sourceCenter?: "bounds" | "origin" | "density";
   /** Projection mode. "fit" scales the source into sizeX/sizeY; "metric" treats source units as meters. */

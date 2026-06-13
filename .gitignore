@@ -28,3 +28,6 @@ public/envs/*/render-manifest.json
 public/envs/*/splats/*
 !public/envs/*/splats/cardinal/
 !public/envs/*/splats/cardinal/**
+!public/envs/go1_gaussian/splats/garden/
+public/envs/go1_gaussian/splats/garden/*
+!public/envs/go1_gaussian/splats/garden/transform.json

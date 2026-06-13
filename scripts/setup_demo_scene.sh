@@ -68,6 +68,7 @@ fi
 echo "3. Creating alignment config: ${JSON_PATH}..."
 cat << 'EOF' > "${JSON_PATH}"
 {
+  "sourceUrl": "https://huggingface.co/cakewalk/splat-data/resolve/main/garden.splat",
   "matrix": {
     "garden.splat": [
       0.9999911218190988, -0.004161033313721418, -0.00066489479653502, 0.16752801296150288,

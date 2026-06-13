@@ -9,6 +9,7 @@ import {
 import type {
   BaseHeightfieldConfig,
   EnvDefinition,
+  GaussianSourceTransformConfig,
   GaussianSplatHeightfieldConfig,
   HeightfieldConfig,
   ProceduralSlopeHeightfieldConfig,
@@ -356,7 +357,7 @@ async function createHeightfield(
     stage: "loading-source",
     completed: 0,
     total: 1,
-    detail: source ? source.name : "Bundled source",
+    detail: source ? source.name : "Preset source",
   });
   const loaded = source
     ? bakeGaussianSource(
@@ -412,14 +413,15 @@ async function createHeightfield(
     let sx = 0;
     let sy = 0;
     let syaw = 0;
-    if (Array.isArray(spawn)) {
-      sx = spawn[0] ?? 0;
-      sy = spawn[1] ?? 0;
-      syaw = spawn[2] ?? 0;
-    } else if (typeof spawn === "object" && spawn !== null) {
+    if (typeof spawn === "object" && spawn !== null && "x" in spawn) {
       sx = spawn.x ?? 0;
       sy = spawn.y ?? 0;
       syaw = spawn.yaw ?? 0;
+    } else {
+      const values = spawn as readonly number[];
+      sx = values[0] ?? 0;
+      sy = values[1] ?? 0;
+      syaw = values[2] ?? 0;
     }
     resolvedConfig = {
       ...resolvedConfig,
@@ -1514,15 +1516,11 @@ interface LoadedGaussianSource {
   source: GaussianHeightfieldSource;
   splats: GaussianSplat[];
   bounds?: SplatBounds;
-  transformMatrix: number[];
+  transformMatrix: readonly number[];
   transformConfig?: TransformConfig | null;
 }
 
-interface TransformConfig {
-  matrix?: number[] | Record<string, number[]>;
-  scale?: number;
-  spawn?: [number, number] | [number, number, number] | { x: number; y: number; yaw?: number };
-}
+type TransformConfig = GaussianSourceTransformConfig;
 
 const IDENTITY_MATRIX = [
   1, 0, 0, 0,
@@ -1538,7 +1536,7 @@ const COLMAP_FLIP_MATRIX = [
   0,  0,  0, 1,
 ];
 
-function transformPoint(matrix: number[], point: Vec3): Vec3 {
+function transformPoint(matrix: readonly number[], point: Vec3): Vec3 {
   return [
     matrix[0] * point[0] + matrix[1] * point[1] + matrix[2] * point[2] + matrix[3],
     matrix[4] * point[0] + matrix[5] * point[1] + matrix[6] * point[2] + matrix[7],
@@ -1546,7 +1544,7 @@ function transformPoint(matrix: number[], point: Vec3): Vec3 {
   ];
 }
 
-function multiplyMatrices4x4(a: number[], b: number[]): number[] {
+function multiplyMatrices4x4(a: readonly number[], b: readonly number[]): number[] {
   const out = new Array<number>(16);
   for (let r = 0; r < 4; r += 1) {
     for (let c = 0; c < 4; c += 1) {
@@ -1579,7 +1577,7 @@ async function tryFetchTransformConfig(sourceUrl: string): Promise<TransformConf
   }
 }
 
-function getMatrixFromConfig(config: TransformConfig, fileName: string): number[] | undefined {
+function getMatrixFromConfig(config: TransformConfig, fileName: string): readonly number[] | undefined {
   if (config.matrix === undefined) {
     return undefined;
   }
@@ -1587,7 +1585,7 @@ function getMatrixFromConfig(config: TransformConfig, fileName: string): number[
     return config.matrix;
   }
   if (typeof config.matrix === "object" && config.matrix !== null) {
-    const val = (config.matrix as Record<string, number[]>)[fileName];
+    const val = (config.matrix as Record<string, readonly number[]>)[fileName];
     if (Array.isArray(val) && val.length === 16) {
       return val;
     }
@@ -1605,7 +1603,7 @@ function defaultTransformMatrix(sourceName?: string): number[] {
 function bakeGaussianSource(
   loadedSet: GaussianSplatSet,
   fileName: string,
-  transformMatrix: number[],
+  transformMatrix: readonly number[],
 ): LoadedGaussianSource {
   const splats = loadedSet.splats;
   for (const splat of splats) {
@@ -1635,10 +1633,10 @@ async function loadFirstGaussianSource(
     }
     const name = sourceUrl.split("/").pop() || sourceUrl;
     const loadedSet = await loadGaussianSource(sourceUrl, bytes);
-    const transformConfig = await tryFetchTransformConfig(sourceUrl);
+    const transformConfig = config.sourceTransformConfig ?? await tryFetchTransformConfig(sourceUrl);
     const matrix = (transformConfig ? getMatrixFromConfig(transformConfig, name) : undefined)
       ?? defaultTransformMatrix(name);
-    
+
     const baked = bakeGaussianSource(loadedSet, name, matrix);
     baked.source.bytes = bytes;
     baked.transformConfig = transformConfig;
@@ -1698,7 +1696,23 @@ async function parseSparkGaussian(fileName: string, bytes: Uint8Array): Promise<
   }
 }
 
+const gaussianSourceByteCache = new Map<string, Promise<Uint8Array | null>>();
+
 async function tryFetchBytes(url: string): Promise<Uint8Array | null> {
+  const cached = gaussianSourceByteCache.get(url);
+  if (cached) {
+    return cached;
+  }
+  const request = fetchBytesUncached(url);
+  gaussianSourceByteCache.set(url, request);
+  const bytes = await request;
+  if (!bytes) {
+    gaussianSourceByteCache.delete(url);
+  }
+  return bytes;
+}
+
+async function fetchBytesUncached(url: string): Promise<Uint8Array | null> {
   try {
     const response = await fetch(url);
     if (!response.ok) {

@@ -1359,7 +1359,7 @@ class WebPlayApp {
               id="gaussian-clear-button"
               class="command-button full-width"
               type="button"
-              title="Remove the loaded custom Gaussian and return this preset to its bundled source"
+              title="Remove the loaded custom Gaussian and return this preset to its configured source"
             >
               <i data-lucide="eraser"></i><span>Clear Custom Gaussian</span>
             </button>
@@ -1375,7 +1375,7 @@ class WebPlayApp {
               step="0.05"
               value="1"
             />
-            <div id="gaussian-source-status" class="inline-status">Bundle source</div>
+            <div id="gaussian-source-status" class="inline-status">Preset source</div>
           </section>
 
           <section id="spawn-picker-section" class="control-section spawn-picker-section" hidden>
@@ -1753,8 +1753,8 @@ class WebPlayApp {
       source
         ? `Custom Gaussian: ${source.name} / ${formatBytes(source.bytes.byteLength)}`
         : activeSource
-          ? `Bundle source: ${activeSource}`
-          : "Bundle source",
+          ? `Preset source: ${activeSource}`
+          : "Preset source",
     );
     this.requiredElement<HTMLInputElement>("#gaussian-file-input").value = "";
     this.updateGaussianSourceControls();
